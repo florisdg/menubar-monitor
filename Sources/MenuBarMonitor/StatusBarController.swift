@@ -30,7 +30,7 @@ final class StatusBarController: NSObject {
     meterView.translatesAutoresizingMaskIntoConstraints = false
     button.addSubview(meterView)
     NSLayoutConstraint.activate([
-      meterView.widthAnchor.constraint(equalToConstant: 9),
+      meterView.widthAnchor.constraint(equalToConstant: 11),
       meterView.heightAnchor.constraint(equalToConstant: 16),
       meterView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
       meterView.centerYAnchor.constraint(equalTo: button.centerYAnchor),

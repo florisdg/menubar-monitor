@@ -23,12 +23,12 @@ final class MeterView: NSView {
     nil
   }
 
-  /// Draws two bottom-aligned, three-point-wide usage bars with a three-point gap.
+  /// Draws two bottom-aligned, four-point-wide usage bars with a three-point gap.
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
 
     drawBar(x: 0, fraction: state.cpuFraction, color: cpuColor)
-    drawBar(x: 6, fraction: state.memoryFraction, color: memoryColor)
+    drawBar(x: 7, fraction: state.memoryFraction, color: memoryColor)
   }
 
   private var cpuColor: NSColor {
@@ -45,8 +45,8 @@ final class MeterView: NSView {
 
   /// Draws one usage bar and its full-height track at the supplied horizontal position.
   private func drawBar(x: CGFloat, fraction: Double, color: NSColor) {
-    let rect = NSRect(x: x, y: 0, width: 3, height: bounds.height)
-    let path = NSBezierPath(roundedRect: rect, xRadius: 1.5, yRadius: 1.5)
+    let rect = NSRect(x: x, y: 0, width: 4, height: bounds.height)
+    let path = NSBezierPath(roundedRect: rect, xRadius: 2, yRadius: 2)
 
     Self.trackColor.setFill()
     path.fill()
@@ -57,7 +57,7 @@ final class MeterView: NSView {
     NSGraphicsContext.saveGraphicsState()
     path.addClip()
     color.setFill()
-    NSRect(x: x, y: 0, width: 3, height: height).fill()
+    NSRect(x: x, y: 0, width: 4, height: height).fill()
     NSGraphicsContext.restoreGraphicsState()
   }
 }
