@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 @MainActor
 final class StatusBarController: NSObject {
@@ -14,6 +15,11 @@ final class StatusBarController: NSObject {
   private let memoryDetailMenuItems = (0..<5).map { _ in
     NSMenuItem(title: "", action: nil, keyEquivalent: "")
   }
+  private let launchAtLoginItem = NSMenuItem(
+    title: "Launch at Login",
+    action: nil,
+    keyEquivalent: ""
+  )
   private var timer: Timer?
 
   override init() {
@@ -49,6 +55,10 @@ final class StatusBarController: NSObject {
     memoryDetailMenuItems.forEach(menu.addItem)
     menu.addItem(.separator())
 
+    launchAtLoginItem.action = #selector(toggleLaunchAtLogin)
+    launchAtLoginItem.target = self
+    menu.addItem(launchAtLoginItem)
+
     let openActivityMonitorItem = NSMenuItem(
       title: "Open Activity Monitor",
       action: #selector(openActivityMonitor),
@@ -64,7 +74,47 @@ final class StatusBarController: NSObject {
     )
     quitItem.target = self
     menu.addItem(quitItem)
+    menu.delegate = self
     statusItem.menu = menu
+  }
+
+  /// Maps the system login-item status to the menu item's checkbox state.
+  static func launchAtLoginState(for status: SMAppService.Status) -> NSControl.StateValue {
+    status == .enabled ? .on : .off
+  }
+
+  /// Refreshes the checkbox from macOS's current login-item status.
+  private func updateLaunchAtLoginItem() {
+    launchAtLoginItem.state = Self.launchAtLoginState(for: SMAppService.mainApp.status)
+  }
+
+  /// Registers or unregisters the app as a macOS login item.
+  @objc private func toggleLaunchAtLogin() {
+    let service = SMAppService.mainApp
+
+    do {
+      switch service.status {
+      case .enabled:
+        try service.unregister()
+      case .requiresApproval:
+        SMAppService.openSystemSettingsLoginItems()
+      default:
+        try service.register()
+      }
+    } catch {
+      updateLaunchAtLoginItem()
+      guard service.status != .requiresApproval else {
+        SMAppService.openSystemSettingsLoginItems()
+        return
+      }
+      NSAlert(error: error).runModal()
+      return
+    }
+
+    updateLaunchAtLoginItem()
+    if service.status == .requiresApproval {
+      SMAppService.openSystemSettingsLoginItems()
+    }
   }
 
   /// Polls resource usage every two seconds, including while the menu is open.
@@ -103,5 +153,12 @@ final class StatusBarController: NSObject {
   /// Terminates the background application.
   @objc private func quit() {
     NSApplication.shared.terminate(nil)
+  }
+}
+
+extension StatusBarController: NSMenuDelegate {
+  /// Refreshes external Login Items changes before presenting the menu.
+  func menuWillOpen(_ menu: NSMenu) {
+    updateLaunchAtLoginItem()
   }
 }
