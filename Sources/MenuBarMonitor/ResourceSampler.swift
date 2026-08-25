@@ -16,6 +16,8 @@ final class ResourceSampler {
     let cached: UInt64
   }
 
+  private let totalMemoryBytes = ProcessInfo.processInfo.physicalMemory
+  private let pageSizeBytes = UInt64(getpagesize())
   private var previousCPUTicks: CPUTicks?
   private var lastCPUUsage = 0.0
 
@@ -79,7 +81,6 @@ final class ResourceSampler {
 
   /// Reads the Mach VM counters used for Activity Monitor's memory breakdown.
   private func readMemoryUsage() -> MemoryStats {
-    let total = ProcessInfo.processInfo.physicalMemory
     var info = vm_statistics64_data_t()
     var count = mach_msg_type_number_t(
       MemoryLayout<vm_statistics64_data_t>.stride / MemoryLayout<integer_t>.stride
@@ -90,17 +91,11 @@ final class ResourceSampler {
       }
     }
 
-    guard result == KERN_SUCCESS else { return emptyMemoryStats(total: total) }
-
-    var pageSize: vm_size_t = 0
-    guard host_page_size(mach_host_self(), &pageSize) == KERN_SUCCESS else {
-      return emptyMemoryStats(total: total)
-    }
+    guard result == KERN_SUCCESS else { return emptyMemoryStats(total: totalMemoryBytes) }
 
     let internalPages = UInt64(info.internal_page_count)
     let purgeablePages = UInt64(info.purgeable_count)
     let appPages = internalPages > purgeablePages ? internalPages - purgeablePages : 0
-    let pageSizeBytes = UInt64(pageSize)
     let app = appPages * pageSizeBytes
     let wired = UInt64(info.wire_count) * pageSizeBytes
     let compressed = UInt64(info.compressor_page_count) * pageSizeBytes
@@ -108,8 +103,8 @@ final class ResourceSampler {
     let free = UInt64(info.free_count) * pageSizeBytes
 
     return MemoryStats(
-      used: total - min(free + cached, total),
-      total: total,
+      used: totalMemoryBytes - min(free + cached, totalMemoryBytes),
+      total: totalMemoryBytes,
       app: app,
       wired: wired,
       compressed: compressed,
