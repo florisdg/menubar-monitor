@@ -1,6 +1,9 @@
 import AppKit
 
 final class MeterView: NSView {
+  /// Native adaptive fill used for the unfilled portion of each bar.
+  static let trackColor = NSColor.tertiaryLabelColor
+
   var state = MeterState(
     cpuUsage: 0,
     memoryUsedBytes: 0,
@@ -40,8 +43,11 @@ final class MeterView: NSView {
     }
   }
 
-  /// Draws one usage bar at the supplied horizontal position.
+  /// Draws one usage bar and its full-height track at the supplied horizontal position.
   private func drawBar(x: CGFloat, fraction: Double, color: NSColor) {
+    Self.trackColor.setFill()
+    NSRect(x: x, y: 0, width: 3, height: bounds.height).fill()
+
     let height = bounds.height * CGFloat(fraction)
     guard height > 0 else { return }
 
