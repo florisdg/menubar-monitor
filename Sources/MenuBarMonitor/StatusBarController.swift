@@ -9,7 +9,7 @@ final class StatusBarController: NSObject {
   /// Lets macOS coalesce meter updates with other processor wake-ups.
   static let pollingTolerance = pollingInterval / 10
 
-  private let sampler = ResourceSampler()
+  private let sampler: ResourceSampler
   private let statusItem = NSStatusBar.system.statusItem(withLength: 17)
   private let meterView = MeterView()
   private let cpuMenuItem = NSMenuItem(title: "CPU: 0.0%", action: nil, keyEquivalent: "")
@@ -26,12 +26,17 @@ final class StatusBarController: NSObject {
     action: nil,
     keyEquivalent: ""
   )
+  private var latestState: MeterState
+  private(set) var isMenuOpen = false
   private var timer: Timer?
 
   override init() {
+    let sampler = ResourceSampler()
+    self.sampler = sampler
+    latestState = sampler.sample()
     super.init()
     configureStatusItem()
-    update()
+    meterView.state = latestState
     startPolling()
   }
 
@@ -127,7 +132,7 @@ final class StatusBarController: NSObject {
   private func startPolling() {
     let timer = Timer(timeInterval: Self.pollingInterval, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated {
-        self?.update()
+        self?.updateMeter()
       }
     }
     timer.tolerance = Self.pollingTolerance
@@ -135,13 +140,20 @@ final class StatusBarController: NSObject {
     self.timer = timer
   }
 
-  /// Refreshes both bars and their corresponding detail rows.
-  private func update() {
-    let state = sampler.sample()
-    meterView.state = state
-    cpuMenuItem.title = state.cpuDescription
-    memoryMenuItem.title = state.memoryDescription
-    for (item, description) in zip(memoryDetailMenuItems, state.memoryDetailDescriptions) {
+  /// Samples resource usage and refreshes the always-visible meters.
+  private func updateMeter() {
+    latestState = sampler.sample()
+    meterView.state = latestState
+    if isMenuOpen {
+      updateMenu()
+    }
+  }
+
+  /// Refreshes detail rows only when they are about to become visible.
+  private func updateMenu() {
+    cpuMenuItem.title = latestState.cpuDescription
+    memoryMenuItem.title = latestState.memoryDescription
+    for (item, description) in zip(memoryDetailMenuItems, latestState.memoryDetailDescriptions) {
       item.title = description
     }
   }
@@ -166,6 +178,13 @@ final class StatusBarController: NSObject {
 extension StatusBarController: NSMenuDelegate {
   /// Refreshes external Login Items changes before presenting the menu.
   func menuWillOpen(_ menu: NSMenu) {
+    isMenuOpen = true
+    updateMenu()
     updateLaunchAtLoginItem()
+  }
+
+  /// Stops updating hidden menu rows after menu tracking ends.
+  func menuDidClose(_ menu: NSMenu) {
+    isMenuOpen = false
   }
 }
