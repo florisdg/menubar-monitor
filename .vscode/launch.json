@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:menubar-monitor}",
+      "name": "Debug MenuBarMonitor",
+      "target": "MenuBarMonitor",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug MenuBarMonitor"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:menubar-monitor}",
+      "name": "Release MenuBarMonitor",
+      "target": "MenuBarMonitor",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release MenuBarMonitor"
+    }
+  ]
+}
