@@ -11,11 +11,6 @@ final class StatusBarController: NSObject {
     action: nil,
     keyEquivalent: ""
   )
-  private let memoryPercentageMenuItem = NSMenuItem(
-    title: "Memory Usage: 0%",
-    action: nil,
-    keyEquivalent: ""
-  )
   private let memoryDetailMenuItems = (0..<5).map { _ in
     NSMenuItem(title: "", action: nil, keyEquivalent: "")
   }
@@ -43,7 +38,6 @@ final class StatusBarController: NSObject {
 
     cpuMenuItem.isEnabled = false
     memoryMenuItem.isEnabled = false
-    memoryPercentageMenuItem.isEnabled = false
     for item in memoryDetailMenuItems {
       item.isEnabled = false
     }
@@ -51,7 +45,6 @@ final class StatusBarController: NSObject {
     let menu = NSMenu()
     menu.addItem(cpuMenuItem)
     menu.addItem(memoryMenuItem)
-    menu.addItem(memoryPercentageMenuItem)
     menu.addItem(.separator())
     memoryDetailMenuItems.forEach(menu.addItem)
     menu.addItem(.separator())
@@ -91,7 +84,6 @@ final class StatusBarController: NSObject {
     meterView.state = state
     cpuMenuItem.title = state.cpuDescription
     memoryMenuItem.title = state.memoryDescription
-    memoryPercentageMenuItem.title = state.memoryPercentageDescription
     for (item, description) in zip(memoryDetailMenuItems, state.memoryDetailDescriptions) {
       item.title = description
     }

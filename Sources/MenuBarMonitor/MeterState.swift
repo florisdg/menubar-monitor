@@ -51,12 +51,8 @@ struct MeterState: Equatable {
 
   /// Text displayed for memory usage in the menu.
   var memoryDescription: String {
-    "Memory: \(format(memoryUsedBytes)) / \(format(totalMemoryBytes))"
-  }
-
-  /// Memory percentage displayed in the status-item menu.
-  var memoryPercentageDescription: String {
-    String(format: "Memory Usage: %.0f%%", memoryFraction * 100)
+    let percentage = String(format: "%.0f%%", memoryFraction * 100)
+    return "Memory: \(percentage) — \(format(memoryUsedBytes)) / \(format(totalMemoryBytes))"
   }
 
   /// Detailed memory rows displayed below the overall memory value.

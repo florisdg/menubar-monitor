@@ -31,9 +31,8 @@ struct MeterStateTests {
     )
 
     #expect(state.memoryFraction == 0.5)
-    #expect(state.memoryPercentageDescription == "Memory Usage: 50%")
     #expect(state.cpuDescription == "CPU: 12.3%")
-    #expect(state.memoryDescription == "Memory: 8.00 GB / 16.00 GB")
+    #expect(state.memoryDescription == "Memory: 50% — 8.00 GB / 16.00 GB")
     #expect(
       state.memoryDetailDescriptions == [
         "App Memory: 4.00 GB",
@@ -59,8 +58,7 @@ struct MeterStateTests {
       memoryPressure: .normal
     )
 
-    #expect(state.memoryDescription == "Memory: 40.00 GB / 48.00 GB")
-    #expect(state.memoryPercentageDescription == "Memory Usage: 83%")
+    #expect(state.memoryDescription == "Memory: 83% — 40.00 GB / 48.00 GB")
     #expect(state.memoryDetailDescriptions[0] == "App Memory: 512.0 MB")
     #expect(state.memoryDetailDescriptions[4] == "Swap Used: 0 bytes")
   }
