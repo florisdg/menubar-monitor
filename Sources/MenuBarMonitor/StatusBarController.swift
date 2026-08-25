@@ -28,7 +28,7 @@ final class StatusBarController: NSObject {
     startPolling()
   }
 
-  /// Installs the meter view and its detail-and-quit menu in the system status bar.
+  /// Installs the meter view and its detail-and-command menu in the system status bar.
   private func configureStatusItem() {
     guard let button = statusItem.button else { return }
 
@@ -55,6 +55,14 @@ final class StatusBarController: NSObject {
     menu.addItem(.separator())
     memoryDetailMenuItems.forEach(menu.addItem)
     menu.addItem(.separator())
+
+    let openActivityMonitorItem = NSMenuItem(
+      title: "Open Activity Monitor",
+      action: #selector(openActivityMonitor),
+      keyEquivalent: ""
+    )
+    openActivityMonitorItem.target = self
+    menu.addItem(openActivityMonitorItem)
 
     let quitItem = NSMenuItem(
       title: "Quit Menu Bar Monitor",
@@ -89,7 +97,18 @@ final class StatusBarController: NSObject {
     }
   }
 
-  /// Terminates the background application from its only menu command.
+  /// Opens macOS's Activity Monitor application.
+  @objc private func openActivityMonitor() {
+    guard
+      let url = NSWorkspace.shared.urlForApplication(
+        withBundleIdentifier: "com.apple.ActivityMonitor"
+      )
+    else { return }
+
+    NSWorkspace.shared.openApplication(at: url, configuration: .init())
+  }
+
+  /// Terminates the background application.
   @objc private func quit() {
     NSApplication.shared.terminate(nil)
   }
