@@ -16,6 +16,13 @@ struct MeterStateTests {
     #expect(makeState(cpuUsage: 98).isCPUCritical)
   }
 
+  @Test("CPU warning starts at exactly 80 percent")
+  func cpuWarningThreshold() {
+    #expect(!makeState(cpuUsage: 79.9).isCPUWarning)
+    #expect(makeState(cpuUsage: 80).isCPUWarning)
+    #expect(makeState(cpuUsage: 97.9).isCPUWarning)
+  }
+
   @Test("Memory fill and labels use the sampled byte counts")
   func memoryPresentation() {
     let state = MeterState(

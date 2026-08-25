@@ -5,6 +5,16 @@ import Testing
 
 @MainActor
 struct MeterViewTests {
+  @Test("CPU endpoint colors use opaque Display P3")
+  func cpuEndpointColorsUseDisplayP3() {
+    #expect(MeterView.cpuWarningColor.colorSpace == .displayP3)
+    #expect(MeterView.cpuWarningColor.greenComponent == 0.5)
+    #expect(MeterView.cpuWarningColor.alphaComponent == 1)
+    #expect(MeterView.cpuCriticalColor.colorSpace == .displayP3)
+    #expect(MeterView.cpuCriticalColor.greenComponent == 0.08)
+    #expect(MeterView.cpuCriticalColor.alphaComponent == 1)
+  }
+
   @Test("Empty meters retain visible native pill tracks")
   func emptyMetersRetainVisibleTracks() throws {
     let view = MeterView(frame: NSRect(x: 0, y: 0, width: 11, height: 16))

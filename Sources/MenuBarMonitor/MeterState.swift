@@ -44,6 +44,11 @@ struct MeterState: Equatable {
     cpuUsage >= 98
   }
 
+  /// Whether the CPU bar should use its warning color.
+  var isCPUWarning: Bool {
+    cpuUsage >= 80
+  }
+
   /// Text displayed for CPU usage in the menu.
   var cpuDescription: String {
     String(format: "CPU: %.1f%%", cpuUsage)

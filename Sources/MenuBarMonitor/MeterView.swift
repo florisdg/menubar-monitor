@@ -4,6 +4,22 @@ final class MeterView: NSView {
   /// Native adaptive fill used for the unfilled portion of each bar.
   static let trackColor = NSColor.tertiaryLabelColor
 
+  /// Wide-gamut endpoint for elevated CPU usage.
+  static let cpuWarningColor = NSColor(
+    displayP3Red: 1,
+    green: 0.5,
+    blue: 0,
+    alpha: 1
+  )
+
+  /// Wide-gamut endpoint for critical CPU usage.
+  static let cpuCriticalColor = NSColor(
+    displayP3Red: 1,
+    green: 0.08,
+    blue: 0.05,
+    alpha: 1
+  )
+
   var state = MeterState(
     cpuUsage: 0,
     memoryUsedBytes: 0,
@@ -32,7 +48,8 @@ final class MeterView: NSView {
   }
 
   private var cpuColor: NSColor {
-    state.isCPUCritical ? .systemRed : .labelColor
+    guard !state.isCPUCritical else { return Self.cpuCriticalColor }
+    return state.isCPUWarning ? Self.cpuWarningColor : .labelColor
   }
 
   private var memoryColor: NSColor {
