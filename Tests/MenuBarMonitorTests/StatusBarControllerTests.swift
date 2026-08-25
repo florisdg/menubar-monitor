@@ -6,6 +6,12 @@ import Testing
 
 @MainActor
 struct StatusBarControllerTests {
+  @Test("Polling remains two seconds with ten percent tolerance")
+  func pollingConfiguration() {
+    #expect(StatusBarController.pollingInterval == 2)
+    #expect(StatusBarController.pollingTolerance == 0.2)
+  }
+
   @Test("Launch at Login checkbox reflects the system service status")
   func launchAtLoginCheckboxState() {
     #expect(StatusBarController.launchAtLoginState(for: .enabled) == .on)

@@ -3,6 +3,12 @@ import ServiceManagement
 
 @MainActor
 final class StatusBarController: NSObject {
+  /// Sampling cadence for the always-visible meters.
+  static let pollingInterval = 2.0
+
+  /// Lets macOS coalesce meter updates with other processor wake-ups.
+  static let pollingTolerance = pollingInterval / 10
+
   private let sampler = ResourceSampler()
   private let statusItem = NSStatusBar.system.statusItem(withLength: 17)
   private let meterView = MeterView()
@@ -119,11 +125,12 @@ final class StatusBarController: NSObject {
 
   /// Polls resource usage every two seconds, including while the menu is open.
   private func startPolling() {
-    let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+    let timer = Timer(timeInterval: Self.pollingInterval, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated {
         self?.update()
       }
     }
+    timer.tolerance = Self.pollingTolerance
     RunLoop.main.add(timer, forMode: .common)
     self.timer = timer
   }
