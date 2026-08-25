@@ -45,13 +45,19 @@ final class MeterView: NSView {
 
   /// Draws one usage bar and its full-height track at the supplied horizontal position.
   private func drawBar(x: CGFloat, fraction: Double, color: NSColor) {
+    let rect = NSRect(x: x, y: 0, width: 3, height: bounds.height)
+    let path = NSBezierPath(roundedRect: rect, xRadius: 1.5, yRadius: 1.5)
+
     Self.trackColor.setFill()
-    NSRect(x: x, y: 0, width: 3, height: bounds.height).fill()
+    path.fill()
 
     let height = bounds.height * CGFloat(fraction)
     guard height > 0 else { return }
 
+    NSGraphicsContext.saveGraphicsState()
+    path.addClip()
     color.setFill()
     NSRect(x: x, y: 0, width: 3, height: height).fill()
+    NSGraphicsContext.restoreGraphicsState()
   }
 }
