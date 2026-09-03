@@ -34,7 +34,7 @@ struct MeterViewTests {
     let topCenterAlpha = try #require(
       bitmap.colorAt(x: Int(2 * scale), y: bitmap.pixelsHigh - Int(0.5 * scale))
     ).alphaComponent
-    #expect(MeterView.trackColor == .tertiaryLabelColor)
+    #expect(MeterView.trackColor.alphaComponent == 0.8)
     #expect(try #require(bitmap.colorAt(x: Int(2 * scale), y: y)).alphaComponent > 0)
     #expect(try #require(bitmap.colorAt(x: Int(9 * scale), y: y)).alphaComponent > 0)
     #expect(try #require(bitmap.colorAt(x: Int(5 * scale), y: y)).alphaComponent == 0)

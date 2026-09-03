@@ -1,8 +1,8 @@
 import AppKit
 
 final class MeterView: NSView {
-  /// Native adaptive fill used for the unfilled portion of each bar.
-  static let trackColor = NSColor.tertiaryLabelColor
+  /// Muted native adaptive fill used for the unfilled portion of each bar.
+  static let trackColor = NSColor.secondaryLabelColor.withAlphaComponent(0.8)
 
   /// Wide-gamut endpoint for elevated CPU usage.
   static let cpuWarningColor = NSColor(
