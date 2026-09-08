@@ -1,4 +1,7 @@
 # Menu Bar Monitor
+<img width="96" height="78" alt="image" src="https://github.com/user-attachments/assets/25c3b537-bade-4085-9550-59ed690de1cc" />
+<img width="327" height="280" alt="image" src="https://github.com/user-attachments/assets/064754a5-4252-44f3-b9f4-c2d92f45d8be" />
+
 
 A tiny native macOS menu-bar app with no third-party dependencies.
 
