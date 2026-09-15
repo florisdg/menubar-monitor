@@ -1,8 +1,8 @@
 import AppKit
 
 final class MeterView: NSView {
-  /// Muted native adaptive fill used for the unfilled portion of each bar.
-  static let trackColor = NSColor.secondaryLabelColor.withAlphaComponent(0.8)
+  /// Native secondary fill preserves adaptive transparency for inactive tracks.
+  static let trackColor = NSColor.secondaryLabelColor
 
   /// Wide-gamut endpoint for elevated CPU usage.
   static let cpuWarningColor = NSColor(
@@ -34,9 +34,18 @@ final class MeterView: NSView {
     didSet { needsDisplay = true }
   }
 
-  /// Lets clicks pass through to the status-bar button beneath the meter.
-  override func hitTest(_ point: NSPoint) -> NSView? {
-    nil
+  /// Uses native status-button styling for normal usage and retains warning colors.
+  static func image(for state: MeterState) -> NSImage {
+    let view = MeterView(frame: NSRect(x: 0, y: 0, width: 11, height: 16))
+    view.state = state
+    let image = NSImage(size: NSSize(width: 11, height: 16), flipped: false) { rect in
+      MainActor.assumeIsolated {
+        view.draw(rect)
+        return true
+      }
+    }
+    image.isTemplate = view.usesTemplateColors
+    return image
   }
 
   /// Draws two bottom-aligned, four-point-wide usage bars with a three-point gap.
@@ -52,6 +61,10 @@ final class MeterView: NSView {
     return state.isCPUWarning ? Self.cpuWarningColor : .labelColor
   }
 
+  private var usesTemplateColors: Bool {
+    !state.isCPUWarning && state.memoryPressure == .normal
+  }
+
   private var memoryColor: NSColor {
     switch state.memoryPressure {
     case .normal: .labelColor
@@ -65,7 +78,9 @@ final class MeterView: NSView {
     let rect = NSRect(x: x, y: 0, width: 4, height: bounds.height)
     let path = NSBezierPath(roundedRect: rect, xRadius: 2, yRadius: 2)
 
-    Self.trackColor.setFill()
+    // Templates use alpha, not RGB shading; vibrant semantic colors can be opaque.
+    let trackColor = usesTemplateColors ? NSColor.black.withAlphaComponent(0.5) : Self.trackColor
+    trackColor.setFill()
     path.fill()
 
     let height = bounds.height * CGFloat(fraction)
@@ -73,7 +88,7 @@ final class MeterView: NSView {
 
     NSGraphicsContext.saveGraphicsState()
     path.addClip()
-    color.setFill()
+    (usesTemplateColors ? NSColor.black : color).setFill()
     NSRect(x: x, y: 0, width: 4, height: height).fill()
     NSGraphicsContext.restoreGraphicsState()
   }

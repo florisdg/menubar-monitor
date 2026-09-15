@@ -11,7 +11,6 @@ final class StatusBarController: NSObject {
 
   private let sampler: ResourceSampler
   private let statusItem = NSStatusBar.system.statusItem(withLength: 17)
-  private let meterView = MeterView()
   private let cpuMenuItem = NSMenuItem(title: "CPU: 0.0%", action: nil, keyEquivalent: "")
   private let memoryMenuItem = NSMenuItem(
     title: "Memory: 0.0 GB / 0.0 GB",
@@ -36,22 +35,14 @@ final class StatusBarController: NSObject {
     latestState = sampler.sample()
     super.init()
     configureStatusItem()
-    meterView.state = latestState
     startPolling()
   }
 
-  /// Installs the meter view and its detail-and-command menu in the system status bar.
+  /// Installs the native meter image and its detail-and-command menu in the status bar.
   private func configureStatusItem() {
     guard let button = statusItem.button else { return }
 
-    meterView.translatesAutoresizingMaskIntoConstraints = false
-    button.addSubview(meterView)
-    NSLayoutConstraint.activate([
-      meterView.widthAnchor.constraint(equalToConstant: 11),
-      meterView.heightAnchor.constraint(equalToConstant: 16),
-      meterView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-      meterView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-    ])
+    button.image = MeterView.image(for: latestState)
 
     cpuMenuItem.isEnabled = false
     memoryMenuItem.isEnabled = false
@@ -143,7 +134,7 @@ final class StatusBarController: NSObject {
   /// Samples resource usage and refreshes the always-visible meters.
   private func updateMeter() {
     latestState = sampler.sample()
-    meterView.state = latestState
+    statusItem.button?.image = MeterView.image(for: latestState)
     if isMenuOpen {
       updateMenu()
     }

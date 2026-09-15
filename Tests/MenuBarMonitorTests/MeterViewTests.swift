@@ -5,6 +5,60 @@ import Testing
 
 @MainActor
 struct MeterViewTests {
+  @Test("Template tracks remain translucent in every menu bar appearance")
+  func templateTrackContrast() throws {
+    for name in [NSAppearance.Name.aqua, .darkAqua, .vibrantLight, .vibrantDark] {
+      let appearance = try #require(NSAppearance(named: name))
+      let image = MeterView.image(for: MeterView().state)
+      var renderedData: Data?
+      appearance.performAsCurrentDrawingAppearance {
+        renderedData = image.tiffRepresentation
+      }
+      let data = try #require(renderedData)
+      let bitmap = try #require(NSBitmapImageRep(data: data))
+      let scale = CGFloat(bitmap.pixelsWide) / image.size.width
+      let alpha = try #require(
+        bitmap.colorAt(x: Int(2 * scale), y: Int(8 * scale))
+      ).alphaComponent
+
+      #expect(image.isTemplate)
+      #expect(abs(alpha - 0.5) < 0.01)
+    }
+  }
+
+  @Test("Native meter images retain their size and warning colors", arguments: [0.0, 80, 98])
+  func nativeMeterImages(cpuUsage: Double) {
+    for pressure in [MemoryPressure.normal, .warning, .critical] {
+      let state = MeterState(
+        cpuUsage: cpuUsage,
+        memoryUsedBytes: 50,
+        totalMemoryBytes: 100,
+        appMemoryBytes: 0,
+        wiredMemoryBytes: 0,
+        compressedMemoryBytes: 0,
+        cachedMemoryBytes: 0,
+        swapUsedBytes: 0,
+        memoryPressure: pressure
+      )
+      let image = MeterView.image(for: state)
+
+      #expect(image.size == NSSize(width: 11, height: 16))
+      #expect(image.isTemplate == (cpuUsage < 80 && pressure == .normal))
+      #expect(image.tiffRepresentation != nil)
+    }
+  }
+
+  @Test("Inactive tracks preserve native transparency in light and dark appearances")
+  func tracksPreserveNativeTransparency() throws {
+    for name in [NSAppearance.Name.aqua, .darkAqua] {
+      let appearance = try #require(NSAppearance(named: name))
+      appearance.performAsCurrentDrawingAppearance {
+        #expect(MeterView.trackColor == NSColor.secondaryLabelColor)
+        #expect(MeterView.trackColor.alphaComponent < NSColor.labelColor.alphaComponent)
+      }
+    }
+  }
+
   @Test("CPU endpoint colors use opaque Display P3")
   func cpuEndpointColorsUseDisplayP3() {
     #expect(MeterView.cpuWarningColor.colorSpace == .displayP3)
@@ -34,7 +88,6 @@ struct MeterViewTests {
     let topCenterAlpha = try #require(
       bitmap.colorAt(x: Int(2 * scale), y: bitmap.pixelsHigh - Int(0.5 * scale))
     ).alphaComponent
-    #expect(MeterView.trackColor.alphaComponent == 0.8)
     #expect(try #require(bitmap.colorAt(x: Int(2 * scale), y: y)).alphaComponent > 0)
     #expect(try #require(bitmap.colorAt(x: Int(9 * scale), y: y)).alphaComponent > 0)
     #expect(try #require(bitmap.colorAt(x: Int(5 * scale), y: y)).alphaComponent == 0)
