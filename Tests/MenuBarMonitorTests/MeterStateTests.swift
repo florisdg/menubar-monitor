@@ -75,6 +75,25 @@ struct MeterStateTests {
     #expect(MemoryPressure(rawValue: 1) == .normal)
     #expect(MemoryPressure(rawValue: 2) == .warning)
     #expect(MemoryPressure(rawValue: 4) == .critical)
+    #expect(MemoryPressure(rawValue: 0) == .unavailable)
+    #expect(MemoryPressure(rawValue: 8) == .unavailable)
+    #expect(MemoryPressure(rawValue: 7) == .critical)
+  }
+
+  @Test("Unavailable memory pressure is explicit in the menu")
+  func unavailablePressureDescription() {
+    let state = MeterState(
+      cpuUsage: 0,
+      memoryUsedBytes: 512 * 1_048_576,
+      totalMemoryBytes: 1_073_741_824,
+      appMemoryBytes: 0,
+      wiredMemoryBytes: 0,
+      compressedMemoryBytes: 0,
+      cachedMemoryBytes: 0,
+      swapUsedBytes: 0,
+      memoryPressure: .unavailable
+    )
+    #expect(state.memoryDescription == "Memory: 50% — 512.0 MB / 1.00 GB (pressure unavailable)")
   }
 
   /// Creates a minimal state for CPU-specific assertions.

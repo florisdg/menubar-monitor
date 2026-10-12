@@ -1,13 +1,10 @@
 import Darwin
 import Foundation
 
+/// Samples aggregate macOS resource counters for the menu-bar meters.
 final class ResourceSampler {
-  private struct CPUTicks {
-    let busy: UInt64
-    let total: UInt64
-  }
-
-  private struct MemoryStats {
+  /// Byte counts derived from the kernel's VM page statistics.
+  struct MemoryStats {
     let used: UInt64
     let total: UInt64
     let app: UInt64
@@ -18,7 +15,7 @@ final class ResourceSampler {
 
   private let totalMemoryBytes = ProcessInfo.processInfo.physicalMemory
   private let pageSizeBytes = UInt64(getpagesize())
-  private var previousCPUTicks: CPUTicks?
+  private var previousCPUTicks: host_cpu_load_info_data_t?
   private var lastCPUUsage = 0.0
 
   init() {
@@ -38,7 +35,9 @@ final class ResourceSampler {
       compressedMemoryBytes: memory.compressed,
       cachedMemoryBytes: memory.cached,
       swapUsedBytes: readSwapUsed(),
-      memoryPressure: readMemoryPressure()
+      memoryPressure: Self.readMemoryPressure { rawValue, size in
+        sysctlbyname("kern.memorystatus_vm_pressure_level", &rawValue, &size, nil, 0)
+      }
     )
   }
 
@@ -49,16 +48,30 @@ final class ResourceSampler {
 
     guard let previousCPUTicks else { return lastCPUUsage }
 
-    let busyDelta = current.busy - previousCPUTicks.busy
-    let totalDelta = current.total - previousCPUTicks.total
-    guard totalDelta > 0 else { return lastCPUUsage }
-
-    lastCPUUsage = Double(busyDelta) / Double(totalDelta) * 100
+    guard let usage = Self.cpuUsage(from: previousCPUTicks, to: current) else {
+      return lastCPUUsage
+    }
+    lastCPUUsage = usage
     return lastCPUUsage
   }
 
+  /// Calculates deltas before widening so each 32-bit counter can wrap independently.
+  static func cpuUsage(
+    from previous: host_cpu_load_info_data_t,
+    to current: host_cpu_load_info_data_t
+  ) -> Double? {
+    let user = UInt64(current.cpu_ticks.0 &- previous.cpu_ticks.0)
+    let system = UInt64(current.cpu_ticks.1 &- previous.cpu_ticks.1)
+    let idle = UInt64(current.cpu_ticks.2 &- previous.cpu_ticks.2)
+    let nice = UInt64(current.cpu_ticks.3 &- previous.cpu_ticks.3)
+    let busy = user + system + nice
+    let total = busy + idle
+    guard total > 0 else { return nil }
+    return Double(busy) / Double(total) * 100
+  }
+
   /// Reads cumulative user, system, nice, and idle ticks from the Mach host API.
-  private func readCPUTicks() -> CPUTicks? {
+  private func readCPUTicks() -> host_cpu_load_info_data_t? {
     var info = host_cpu_load_info_data_t()
     var count = mach_msg_type_number_t(
       MemoryLayout<host_cpu_load_info_data_t>.stride / MemoryLayout<integer_t>.stride
@@ -71,12 +84,7 @@ final class ResourceSampler {
 
     guard result == KERN_SUCCESS else { return nil }
 
-    let user = UInt64(info.cpu_ticks.0)
-    let system = UInt64(info.cpu_ticks.1)
-    let idle = UInt64(info.cpu_ticks.2)
-    let nice = UInt64(info.cpu_ticks.3)
-    let busy = user + system + nice
-    return CPUTicks(busy: busy, total: busy + idle)
+    return info
   }
 
   /// Reads the Mach VM counters used for Activity Monitor's memory breakdown.
@@ -93,18 +101,27 @@ final class ResourceSampler {
 
     guard result == KERN_SUCCESS else { return emptyMemoryStats(total: totalMemoryBytes) }
 
+    return Self.memoryStats(from: info, totalBytes: totalMemoryBytes, pageSize: pageSizeBytes)
+  }
+
+  /// Converts VM page counters to bytes without counting purgeable pages as app memory.
+  static func memoryStats(
+    from info: vm_statistics64_data_t,
+    totalBytes: UInt64,
+    pageSize: UInt64
+  ) -> MemoryStats {
     let internalPages = UInt64(info.internal_page_count)
     let purgeablePages = UInt64(info.purgeable_count)
     let appPages = internalPages > purgeablePages ? internalPages - purgeablePages : 0
-    let app = appPages * pageSizeBytes
-    let wired = UInt64(info.wire_count) * pageSizeBytes
-    let compressed = UInt64(info.compressor_page_count) * pageSizeBytes
-    let cached = (UInt64(info.external_page_count) + purgeablePages) * pageSizeBytes
-    let free = UInt64(info.free_count) * pageSizeBytes
+    let app = appPages * pageSize
+    let wired = UInt64(info.wire_count) * pageSize
+    let compressed = UInt64(info.compressor_page_count) * pageSize
+    let cached = (UInt64(info.external_page_count) + purgeablePages) * pageSize
+    let free = UInt64(info.free_count) * pageSize
 
     return MemoryStats(
-      used: totalMemoryBytes - min(free + cached, totalMemoryBytes),
-      total: totalMemoryBytes,
+      used: totalBytes - min(free + cached, totalBytes),
+      total: totalBytes,
       app: app,
       wired: wired,
       compressed: compressed,
@@ -125,11 +142,11 @@ final class ResourceSampler {
     return usage.xsu_used
   }
 
-  /// Reads macOS's current normal, warning, or critical memory-pressure level.
-  private func readMemoryPressure() -> MemoryPressure {
-    var rawValue: Int32 = 1
+  /// Reads pressure through the supplied system call, preserving an unavailable reading.
+  static func readMemoryPressure(using read: (inout Int32, inout Int) -> Int32) -> MemoryPressure {
+    var rawValue: Int32 = 0
     var size = MemoryLayout<Int32>.size
-    sysctlbyname("kern.memorystatus_vm_pressure_level", &rawValue, &size, nil, 0)
+    guard read(&rawValue, &size) == 0 else { return .unavailable }
     return MemoryPressure(rawValue: rawValue)
   }
 }

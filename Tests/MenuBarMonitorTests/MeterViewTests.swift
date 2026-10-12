@@ -28,7 +28,7 @@ struct MeterViewTests {
 
   @Test("Native meter images retain their size and warning colors", arguments: [0.0, 80, 98])
   func nativeMeterImages(cpuUsage: Double) {
-    for pressure in [MemoryPressure.normal, .warning, .critical] {
+    for pressure in [MemoryPressure.normal, .warning, .critical, .unavailable] {
       let state = MeterState(
         cpuUsage: cpuUsage,
         memoryUsedBytes: 50,
@@ -43,7 +43,9 @@ struct MeterViewTests {
       let image = MeterView.image(for: state)
 
       #expect(image.size == NSSize(width: 11, height: 16))
-      #expect(image.isTemplate == (cpuUsage < 80 && pressure == .normal))
+      #expect(
+        image.isTemplate == (cpuUsage < 80 && (pressure == .normal || pressure == .unavailable))
+      )
       #expect(image.tiffRepresentation != nil)
     }
   }

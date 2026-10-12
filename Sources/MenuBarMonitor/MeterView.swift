@@ -62,12 +62,12 @@ final class MeterView: NSView {
   }
 
   private var usesTemplateColors: Bool {
-    !state.isCPUWarning && state.memoryPressure == .normal
+    !state.isCPUWarning && (state.memoryPressure == .normal || state.memoryPressure == .unavailable)
   }
 
   private var memoryColor: NSColor {
     switch state.memoryPressure {
-    case .normal: .labelColor
+    case .normal, .unavailable: .labelColor
     case .warning: .systemYellow
     case .critical: .systemRed
     }

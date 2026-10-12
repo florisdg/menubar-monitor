@@ -4,15 +4,18 @@ enum MemoryPressure: Equatable {
   case normal
   case warning
   case critical
+  case unavailable
 
-  /// Converts macOS memory-pressure flags into the three states shown by the meter.
+  /// Parses macOS pressure flags, keeping unknown values distinct from normal pressure.
   init(rawValue: Int32) {
     if rawValue & 4 != 0 {
       self = .critical
     } else if rawValue & 2 != 0 {
       self = .warning
-    } else {
+    } else if rawValue & 1 != 0 {
       self = .normal
+    } else {
+      self = .unavailable
     }
   }
 }
@@ -57,7 +60,8 @@ struct MeterState: Equatable {
   /// Text displayed for memory usage in the menu.
   var memoryDescription: String {
     let percentage = String(format: "%.0f%%", memoryFraction * 100)
-    return "Memory: \(percentage) — \(format(memoryUsedBytes)) / \(format(totalMemoryBytes))"
+    let usage = "Memory: \(percentage) — \(format(memoryUsedBytes)) / \(format(totalMemoryBytes))"
+    return memoryPressure == .unavailable ? "\(usage) (pressure unavailable)" : usage
   }
 
   /// Detailed memory rows displayed below the overall memory value.
