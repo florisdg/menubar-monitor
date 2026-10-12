@@ -1,9 +1,9 @@
 # Menu Bar Monitor
-<img width="96" height="78" alt="image" src="https://github.com/user-attachments/assets/25c3b537-bade-4085-9550-59ed690de1cc" />
-<img width="327" height="280" alt="image" src="https://github.com/user-attachments/assets/064754a5-4252-44f3-b9f4-c2d92f45d8be" />
+<img width="102" height="67" alt="dyn-eafba0c4f9c6905a1b3319901d1e2c01" src="https://github.com/user-attachments/assets/08901261-44a3-4124-9c8a-8d924aa24dfe" />
+<img width="327" height="277" alt="file-813ce1750100bb9902ba150755bcdb7d" src="https://github.com/user-attachments/assets/dca80fde-cfd8-40b1-b836-c8d7e62c32c4" />
 
 
-A tiny native macOS menu-bar app with no third-party dependencies.
+A tiny native macOS menu-bar app for monitoring system resources with no third-party dependencies.
 
 - Left bar: aggregate CPU use; amber from 80% and red from 98%.
 - Right bar: memory use; native label color under normal pressure, yellow under warning pressure, and red under critical pressure.
