@@ -88,7 +88,7 @@ struct MeterViewTests {
       bitmap.colorAt(x: 0, y: bitmap.pixelsHigh - 1)
     ).alphaComponent
     let topCenterAlpha = try #require(
-      bitmap.colorAt(x: Int(2 * scale), y: bitmap.pixelsHigh - Int(0.5 * scale))
+      bitmap.colorAt(x: Int(2 * scale), y: Int(CGFloat(bitmap.pixelsHigh) - 0.5 * scale))
     ).alphaComponent
     #expect(try #require(bitmap.colorAt(x: Int(2 * scale), y: y)).alphaComponent > 0)
     #expect(try #require(bitmap.colorAt(x: Int(9 * scale), y: y)).alphaComponent > 0)
